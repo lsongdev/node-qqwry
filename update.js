@@ -1,7 +1,7 @@
 const fs = require('fs');
 const zlib = require('zlib');
 const http = require('http');
-const gbk = require('fast-gbk')();
+const gbk = require('fast-gbk');
 const QQwryDecoder = require('./decode');
 
 const API = 'http://update.cz88.net';
@@ -9,7 +9,7 @@ const API_QQWRY = API + '/ip/qqwry.rar';
 const API_COPYWRITE = API + '/ip/copywrite.rar';
 
 const get = url => 
-  new Promise((resolve) => http.get(url, resolve));
+  new Promise(done => http.get(url, done));
 
 const version = copywrite => {
   copywrite.read(20);

@@ -8,7 +8,22 @@
 ### Installation
 
 ```bash
-$ npm install geoip-qqwry
+$ npm i [-g] geoip-qqwry [--save]
+```
+
+### Usage
+
+```bash
+~$ qqwry
+~> geoip-qqwry@0.0.3
+
+ - lookup [ip]
+ - update
+ - version
+ - help
+
+~$ qqwry lookup 114.114.114.114
+~> 江苏省南京市 南京信风网络科技有限公司GreatbitDNS服务器
 ```
 
 ### Example

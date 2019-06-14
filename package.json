@@ -1,7 +1,7 @@
 {
   "name": "geoip-qqwry",
   "description": "A light weight native JavaScript implementation of GeoIP API",
-  "version": "0.0.2",
+  "version": "0.0.5",
   "main": "index.js",
   "directories": {
     "example": "example",
@@ -12,8 +12,7 @@
   },
   "scripts": {
     "test": "node test",
-    "update": "node ./bin/update",
-    "postinstall": "npm run update"
+    "update": "node ./bin/update"
   },
   "dependencies": {
     "fast-gbk": "latest"
@@ -29,6 +28,9 @@
   },
   "homepage": "https://github.com/song940/qqwry#readme",
   "keywords": [
-    "geoip"
+    "geoip",
+    "geolookup",
+    "location",
+    "qqwry"
   ]
 }

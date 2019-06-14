@@ -1,7 +1,7 @@
 const qqwry = require('..');
 const assert = require('assert');
 
-const { lookup, version } = qqwry();
+const { lookup, version, searchIndex } = qqwry();
 
 assert.equal(version[0], '纯真网络');
 
@@ -19,3 +19,10 @@ assert.equal(version[0], '纯真网络');
 ].forEach(([ip, country, area]) => {
   assert.deepEqual(lookup(ip), [country, area]);
 });
+
+assert.equal(qqwry.ip2long('127.0.0.1'), 2130706433);
+assert.equal(qqwry.ip2long('192.168.88.1'), 3232258049);
+assert.equal(qqwry.long2ip(2130706433), '127.0.0.1');
+assert.equal(qqwry.long2ip(3232258049), '192.168.88.1');
+
+assert.equal(searchIndex('8.8.8.8').ip, '8.8.8.8');

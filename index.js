@@ -1,29 +1,21 @@
 const fs = require('fs');
+const path = require('path');
 const { debuglog } = require('util');
-const { decode } = require('fast-gbk')();
+const { decode } = require('fast-gbk');
 
 const debug = debuglog('qqwry');
 
-const IP_RECORD_LENGTH = 7;
 const REDIRECT_MODE_1 = 1;
 const REDIRECT_MODE_2 = 2;
+const IP_RECORD_LENGTH = 7;
+const IP_LENGTH = 4;
+const SKIP_IP_LENGTH = IP_LENGTH;
 
 const ip2long = ip =>
   ip.split('.').reduce((n, p) => (n << 8) + parseInt(p), 0) >>> 0;
 
-const long2ip = int => {
-  if (int < 0 || int > 0xffffffff)
-    throw 'The IP number is not normal! >> ' + int;
-  return (
-    (int >>> 24) +
-    '.' +
-    ((int >>> 16) & 0xff) +
-    '.' +
-    ((int >>> 8) & 0xff) +
-    '.' +
-    ((int >>> 0) & 0xff)
-  );
-};
+const long2ip = n =>
+  [0, 0, 0, 0].map((_, i) => (n >>> (i * 8)) & 0xff).reverse().join('.')
 
 const createReader = buffer => {
   var max = buffer.length;
@@ -61,13 +53,19 @@ const middle = (b, e, l = IP_RECORD_LENGTH) => {
   return r ^ b ? r : r + l;
 };
 
+const readIP = reader => {
+  return index => {
+    return long2ip(reader.readUIntLE(index, IP_LENGTH));
+  }
+}
+
 const searchIndex = reader => {
   const { first, last } = header(reader);
-  return n => {
-    var b, e, m, v;
+  return ip => {
+    var b, e, m, v, n = ip2long(ip);
     for (b = first, e = last; b < e;) {
       m = middle(b, e);
-      v = reader.readUIntLE(m, 4);
+      v = reader.readUIntLE(m, IP_LENGTH);
       if (n > v) {
         b = m;
       } else if (n < v) {
@@ -80,7 +78,19 @@ const searchIndex = reader => {
         break;
       }
     }
-    return m;
+    return {
+      ip: readIP(reader)(m),
+      offset: reader.readUIntLE(m + SKIP_IP_LENGTH, 3)
+    };
+  };
+};
+
+const readRecord = reader => {
+  return index => {
+    const ip = readIP(reader)(index);
+    const offset = index + SKIP_IP_LENGTH;
+    const value = location(reader)(offset);
+    return { ip, offset, value };
   };
 };
 
@@ -94,7 +104,7 @@ const location = reader => {
           n++;
           continue;
         case REDIRECT_MODE_2:
-          p2 = n + 4;
+          p2 = n + SKIP_IP_LENGTH;
         case REDIRECT_MODE_1:
           debug('redirect:', mode);
           n = reader.readUIntLE(n + 1, 3);
@@ -114,40 +124,40 @@ const location = reader => {
 
 const lookup = reader => {
   return ip => {
-    const n = ip2long(ip);
-    const index = searchIndex(reader)(n);
-    const offset = reader.readUIntLE(index + 4, 3);
-    const begip = long2ip(reader.readUIntLE(index, 4));
-    const endip = long2ip(reader.readUIntLE(offset, 4));
-    debug(begip, endip);
-    return location(reader)(offset + 4);
+    const index = searchIndex(reader)(ip);
+    const record = readRecord(reader)(index.offset);
+    debug(ip, index.ip, record.ip);
+    return record.value;
   };
 };
 
 const version = reader => {
   const { last } = header(reader);
-  const offset = reader.readUIntLE(last + 4, 3);
-  return location(reader)(offset + 4);
+  const offset = reader.readUIntLE(last + SKIP_IP_LENGTH, 3);
+  return readRecord(reader)(offset).value;
 };
 
 /**
  * http://staff.ustc.edu.cn/~ypb/exp/qqwry.pdf
  */
-function qqwry(options = __dirname + '/qqwry.dat') {
+function qqwry(options = path.join(__dirname, 'qqwry.dat')) {
   if (typeof options === 'string')
     options = fs.readFileSync(options);
   const reader = createReader(options);
   return {
     lookup: lookup(reader),
     version: version(reader),
+    readRecord: readRecord(reader),
     searchIndex: searchIndex(reader),
   };
 };
 
 qqwry.lookup = lookup;
+qqwry.version = version;
 qqwry.ip2long = ip2long;
 qqwry.long2ip = long2ip;
 qqwry.location = location;
+qqwry.readRecord = readRecord;
 qqwry.searchIndex = searchIndex;
 qqwry.createReader = createReader;
 
