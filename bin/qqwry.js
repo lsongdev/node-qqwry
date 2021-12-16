@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
-const path = require('path');
+const { join } = require('path');
+const { isIPv4 } = require('net');
+const { lookup } = require('dns').promises;
 const qqwry = require('..');
 const package = require('../package');
 const {
@@ -15,7 +17,11 @@ const {
 const [command, ...args] = process.argv.slice(2);
 
 const commands = {
-  lookup(ip) {
+  async lookup(ip) {
+    if (!isIPv4(ip)) {
+      const { address } = await lookup(ip);
+      ip = address;
+    }
     console.log(this.lookup(ip).join(' '));
   },
   version() {
@@ -29,7 +35,7 @@ const commands = {
       .then(getQQwry)
       .then(decode(key))
       .then(unzip)
-      .then(writeStream(path.join(__dirname, '../qqwry.dat')))
+      .then(writeStream(join(__dirname, '../qqwry.dat')))
     // .then(readStream)
     // .then(console.log)
   },

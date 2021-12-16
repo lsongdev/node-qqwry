@@ -1,7 +1,7 @@
 {
   "name": "geoip-qqwry",
   "description": "A light weight native JavaScript implementation of GeoIP API",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "main": "index.js",
   "directories": {
     "example": "example",
