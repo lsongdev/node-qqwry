@@ -27,17 +27,18 @@ const commands = {
   version() {
     return console.log(this.version);
   },
-  async update() {
+  async update(filename) {
+    console.log(filename);
     const { key, version } = await getVersion();
     console.log(version);
     Promise
-      .resolve()
+      .resolve(filename)
       .then(getQQwry)
       .then(decode(key))
       .then(unzip)
       .then(writeStream(join(__dirname, '../qqwry.dat')))
-    // .then(readStream)
-    // .then(console.log)
+      .then(readStream)
+      .then(console.log)
   },
   help() {
     console.log();

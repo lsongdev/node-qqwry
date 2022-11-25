@@ -1,15 +1,24 @@
 const fs = require('fs');
 const zlib = require('zlib');
-const http = require('http');
+const https = require('https');
 const gbk = require('fast-gbk');
 const QQwryDecoder = require('./decode');
 
-const API = 'http://update.cz88.net';
+const API = 'https://update.cz88.net';
 const API_QQWRY = API + '/ip/qqwry.rar';
 const API_COPYWRITE = API + '/ip/copywrite.rar';
 
-const get = url => 
-  new Promise(done => http.get(url, done));
+const get = url =>
+  new Promise(done => {
+    console.log(url);
+    https.get(url, res => {
+      if (res.statusCode === 301) {
+        get(res.headers["location"]).then(done, console.error)
+      } else {
+        done(res);
+      }
+    });
+  });
 
 const version = copywrite => {
   copywrite.read(20);
@@ -20,16 +29,16 @@ const version = copywrite => {
 
 const getVersion = () =>
   Promise
-  .resolve(API_COPYWRITE)
-  .then(get)
-  .then(version)
+    .resolve(API_COPYWRITE)
+    .then(get)
+    .then(version)
 
-const getQQwry = () =>
-  Promise
-  .resolve(API_QQWRY)
-  .then(get)
+const getQQwry = local => {
+  if (local) return fs.createReadStream(local);
+  return get(API_QQWRY);
+}
 
-const decode = key => 
+const decode = key =>
   res => res.pipe(new QQwryDecoder(key))
 
 const unzip = stream =>
@@ -45,7 +54,7 @@ const readStream = stream => {
   });
 };
 
-const writeStream = filename => 
+const writeStream = filename =>
   stream => stream.pipe(fs.createWriteStream(filename));
 
 module.exports = {
